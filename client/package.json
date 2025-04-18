@@ -9,19 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-label": "^2.1.3",
     "@radix-ui/react-select": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.0",
     "@tailwindcss/postcss": "^4.1.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "monaco-editor": "^0.52.2",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.488.0",
+    "monaco-editor": "^0.52.2",
     "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18",
-    "react-monaco-editor": "^0.58.0",
+    "react-resizable-panels": "^2.1.7",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7"

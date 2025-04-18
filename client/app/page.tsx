@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Navbar } from '@/components/navbar';
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
       {/* bg-[radial-gradient(ellipse_at_bottom,theme(colors.pink.400),theme(colors.blue.500))] */}
-
+      <Navbar />
       <section className="flex-1 flex flex-col items-center bg-gradient-to-b from-white to-gray-200  justify-center text-center px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-6">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">

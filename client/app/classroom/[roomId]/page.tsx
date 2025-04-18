@@ -5,28 +5,38 @@ import { useSocket } from '@/providers/socket-provider';
 import { SupportedLanguages, UserRole } from '@/types';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import debounce from 'lodash.debounce';
+import { helloWorldSnippets } from '@/lib/utils';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import { Loader2, Play } from 'lucide-react';
 
-// Dynamically import Monaco Editor to avoid SSR issues
-const MonacoEditor = dynamic(
-    () => import('react-monaco-editor').then((mod) => mod.default),
-    {
-        ssr: false,
-        loading: () => <div className="h-[60vh] w-full bg-muted animate-pulse rounded-md" />
-    }
-);
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+    ssr: false,
+});
+
 
 export default function ClassroomPage({ roomId }: { roomId: string }) {
     const searchParams = useSearchParams();
     const { socket, isConnected } = useSocket();
-    const [code, setCode] = useState('// Write your code here\n');
     const [output, setOutput] = useState('');
     const [userRole, setUserRole] = useState<UserRole>(searchParams.get('role') as UserRole || 'student');
     const [language, setLanguage] = useState<SupportedLanguages>('javascript');
     const [isExecuting, setIsExecuting] = useState(false);
+    const [code, setCode] = useState(helloWorldSnippets["javascript"]);
+
 
     // Debounced version of emitting code change
     const emitCodeChange = useCallback(
@@ -35,28 +45,31 @@ export default function ClassroomPage({ roomId }: { roomId: string }) {
         }, 300),
         [socket, roomId]
     );
-
-    const handleCodeChange = (newValue: string) => {
+    const handleCodeChange = (newValue: string | undefined) => {
+        if (newValue === undefined) return;
         setCode(newValue);
         emitCodeChange(newValue);
     };
 
     const handleLanguageChange = (newLanguage: SupportedLanguages) => {
         setLanguage(newLanguage);
+        // @ts-ignore
+        setCode(helloWorldSnippets[newLanguage]);
         socket?.emit('language-change', roomId, newLanguage);
     };
 
-    const executeCode = async () => {
+    const executeCode = () => {
         if (!socket || isExecuting) return;
 
         setIsExecuting(true);
+        console.log(isExecuting, 'isExecuting');
+
         setOutput('Executing...');
 
         try {
             socket.emit('execute-code', roomId, code, language);
         } catch (error) {
             setOutput(`Error: ${error instanceof Error ? error.message : 'Execution failed'}`);
-        } finally {
             setIsExecuting(false);
         }
     };
@@ -74,6 +87,7 @@ export default function ClassroomPage({ roomId }: { roomId: string }) {
 
         const handleCodeUpdate = (newCode: string) => {
             if (newCode !== code) {
+                console.log('Code updated from server:', newCode);
                 setCode(newCode);
             }
         };
@@ -102,12 +116,11 @@ export default function ClassroomPage({ roomId }: { roomId: string }) {
             socket.off('language-update', handleLanguageUpdate);
             socket.off('execution-result', handleExecutionResult);
             socket.off('execution-error', handleExecutionError);
-            // emitCodeChange.cancel();
         };
     }, [socket, code]);
 
     return (
-        <div className="container py-8">
+        <div className="p-10 mx-auto bg-gray-100 w-full">
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -131,25 +144,23 @@ export default function ClassroomPage({ roomId }: { roomId: string }) {
                             </Select>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="role">Role:</Label>
-                            <Select
-                                value={userRole}
-                                onValueChange={(value) => {
-                                    const newRole = value as UserRole;
-                                    setUserRole(newRole);
-                                    socket?.emit('join-room', roomId, newRole);
-                                }}
-                            >
-                                <SelectTrigger id="role" className="w-[120px]">
-                                    <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="teacher">Teacher</SelectItem>
-                                    <SelectItem value="student">Student</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <Button
+                            onClick={executeCode}
+                            className="w-20"
+                            disabled={isExecuting || !isConnected}
+                        >
+                            {
+                                isExecuting ? (
+                                    <>
+                                        <Loader2 className="animate-spin w-4 h-4" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Play className="w-4 h-4" />
+                                        Run
+                                    </>
+                                )}
+                        </Button>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -163,38 +174,33 @@ export default function ClassroomPage({ roomId }: { roomId: string }) {
                     </div>
                 </div>
 
-                <div className="rounded-lg border overflow-hidden">
-                    <MonacoEditor
-                        height="60vh"
-                        language={language}
-                        theme="vs-dark"
-                        value={code}
-                        options={{
-                            automaticLayout: true,
-                            fontSize: 14,
-                            minimap: { enabled: false },
-                        }}
-                        onChange={handleCodeChange}
-                    />
-                </div>
-
-                {userRole === 'teacher' && (
-                    <Button
-                        onClick={executeCode}
-                        className="self-end"
-                        disabled={isExecuting || !isConnected}
-                    >
-                        {isExecuting ? 'Executing...' : 'Execute Code'}
-                    </Button>
-                )}
-
-                <div className="rounded-lg bg-muted p-4">
-                    <h3 className="font-medium mb-2">Output:</h3>
-                    <pre className="whitespace-pre-wrap break-words font-mono text-sm">
-                        {output || 'Output will appear here...'}
-                    </pre>
-                </div>
+                <ResizablePanelGroup direction="vertical" className="min-h-[80vh]">
+                    <ResizablePanel defaultSize={75}>
+                        <div className="h-full rounded-lg border overflow-hidden">
+                            <MonacoEditor
+                                language={language}
+                                theme="vs-dark"
+                                value={code}
+                                options={{
+                                    automaticLayout: true,
+                                    fontSize: 14,
+                                    minimap: { enabled: false },
+                                }}
+                                onChange={handleCodeChange}
+                            />
+                        </div>
+                    </ResizablePanel>
+                    <ResizableHandle />
+                    <ResizablePanel defaultSize={25}>
+                        <div className="h-full rounded-lg bg-muted p-4 overflow-auto">
+                            <h3 className="font-medium mb-2">Output:</h3>
+                            <pre className="whitespace-pre-wrap break-words font-mono text-sm">
+                                {output || 'Output will appear here...'}
+                            </pre>
+                        </div>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
             </div>
-        </div>
+        </div >
     );
 }

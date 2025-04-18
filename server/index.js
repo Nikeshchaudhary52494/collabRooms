@@ -48,6 +48,7 @@ io.on('connection', (socket) => {
 
     // Handle code changes
     socket.on('code-change', (roomId, newCode) => {
+        console.log(`Code changed in room ${roomId}: ${newCode}`);
         if (rooms[roomId]) {
             rooms[roomId].code = newCode;
             socket.to(roomId).emit('code-update', newCode);
@@ -63,8 +64,8 @@ io.on('connection', (socket) => {
 
     // Handle execution requests
     socket.on('execute-code', async (roomId, code, language) => {
-        if (!rooms[roomId] || socket.id !== rooms[roomId].teacher) {
-            return socket.emit('execution-error', 'Only teacher can execute code');
+        if (!rooms[roomId]) {
+            return socket.emit('execution-error', 'no room found');
         }
 
         try {
@@ -75,7 +76,7 @@ io.on('connection', (socket) => {
             };
             io.to(roomId).emit('execution-result', executionResult);
         } catch (error) {
-            socket.emit('execution-error', error ? error.message : 'Execution failed');
+            io.to(roomId).emit('execution-error', error ? error.message : 'Execution failed');
         }
     });
 
