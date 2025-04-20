@@ -1,18 +1,28 @@
 export const voiceController = {
     handleJoinVoiceRoom(socket, roomId) {
         socket.join(roomId);
-        socket.to(roomId).emit("user-joined-voice", { peerId: socket.id });
+        socket.to(roomId).emit("user-joined-voice", socket.id);
+
+        const room = socket.adapter.rooms.get(roomId);
+        const participants = room ? Array.from(room).filter(id => id !== socket.id) : [];
+
+        socket.emit("existing-voice-users", participants);
+        console.log(`User ${socket.id} joined voice room ${roomId}`);
     },
 
-    handleOffer(socket, { to, offer }) {
-        socket.to(to).emit("receive-offer", { from: socket.id, offer });
+    handleSignal(socket, { to, signal }) {
+        if (!socket.adapter.rooms.has(to)) {
+            return socket.emit("error", "Target user not found");
+        }
+
+        socket.to(to).emit("user-signal", {
+            peerId: socket.id,
+            signal
+        });
     },
 
-    handleAnswer(socket, { to, answer }) {
-        socket.to(to).emit("receive-answer", { from: socket.id, answer });
-    },
-
-    handleIceCandidate(socket, { to, candidate }) {
-        socket.to(to).emit("ice-candidate", { from: socket.id, candidate });
+    handleLeaveVoiceRoom(socket, roomId) {
+        socket.to(roomId).emit("user-left-voice", socket.id);
+        socket.leave(roomId);
     }
 };

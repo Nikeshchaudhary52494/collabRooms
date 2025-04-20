@@ -35,23 +35,24 @@ export const socketRoutes = (io) => {
             voiceController.handleJoinVoiceRoom(socket, roomId);
         });
 
-        socket.on("send-offer", (data) => {
-            voiceController.handleOffer(socket, data);
+        socket.on("signal", (data) => {
+            voiceController.handleSignal(socket, data);
         });
 
-        socket.on("send-answer", (data) => {
-            voiceController.handleAnswer(socket, data);
-        });
-
-        socket.on("ice-candidate", (data) => {
-            voiceController.handleIceCandidate(socket, data);
+        socket.on('leave-voice-room', (roomId) => {
+            voiceController.handleLeaveVoiceRoom(socket, roomId);
         });
 
         socket.on('leave-room', (roomId) => {
             roomController.handleLeaveRoom(socket, roomId);
+            voiceController.handleLeaveVoiceRoom(socket, roomId);
         });
 
         socket.on('disconnect', () => {
+            const rooms = [...socket.rooms].filter(room => room !== socket.id);
+            rooms.forEach(roomId => {
+                voiceController.handleLeaveVoiceRoom(socket, roomId);
+            });
             console.log('Client disconnected', socket.id);
         });
     });
