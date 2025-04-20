@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { SupportedLanguages } from '@/types';
+import { MemberData, RoomData, SupportedLanguages } from '@/types';
 import { Socket } from 'socket.io-client';
 
 export const useSocketEvents = (
@@ -8,22 +8,22 @@ export const useSocketEvents = (
     const [code, setCode] = useState('');
     const [output, setOutput] = useState('');
     const [language, setLanguage] = useState<SupportedLanguages>('javascript');
+    const [roomName, setRoomName] = useState('');
+    const [teacher, setTeacher] = useState<MemberData | null>(null);
+    const [students, setStudents] = useState<MemberData[]>([]);
     const [isExecuting, setIsExecuting] = useState(false);
 
     const onCodeUpdate = useCallback((newCode: string) => {
         if (newCode !== code) {
-            console.log('Code updated from server:', newCode);
             setCode(newCode);
         }
     }, [code]);
 
     const onLanguageUpdate = useCallback((lang: SupportedLanguages) => {
-        console.log('Language updated:', lang);
         setLanguage(lang);
     }, []);
 
     const onExecutionResult = useCallback((result: string) => {
-        console.log('Execution result:', result);
         setOutput(result);
         setIsExecuting(false);
     }, []);
@@ -34,6 +34,14 @@ export const useSocketEvents = (
         setIsExecuting(false);
     }, []);
 
+    const onCurrenrRoomInfo = useCallback((roominfo: RoomData) => {
+        setCode(roominfo.code);
+        setLanguage(roominfo.language);
+        setRoomName(roominfo.name);
+        setTeacher(roominfo.teacher);
+        setStudents(roominfo.students);
+    }, [])
+
     useEffect(() => {
         if (!socket) return;
 
@@ -41,12 +49,14 @@ export const useSocketEvents = (
         socket.on('language-update', onLanguageUpdate);
         socket.on('execution-result', onExecutionResult);
         socket.on('execution-error', onExecutionError);
+        socket.on('current-room-info', onCurrenrRoomInfo);
 
         return () => {
             socket.off('code-update', onCodeUpdate);
             socket.off('language-update', onLanguageUpdate);
             socket.off('execution-result', onExecutionResult);
             socket.off('execution-error', onExecutionError);
+            socket.off('current-room-info', onCurrenrRoomInfo);
         };
     }, [socket, onCodeUpdate, onLanguageUpdate, onExecutionResult, onExecutionError]);
 
@@ -59,5 +69,8 @@ export const useSocketEvents = (
         setLanguage,
         isExecuting,
         setIsExecuting,
+        teacher,
+        students,
+        roomName,
     };
 };

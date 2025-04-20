@@ -97,7 +97,6 @@ export const useVoiceRoom = (
                 });
 
                 socket.on("user-signal", ({ peerId, signal }) => {
-                    console.log("Received signal from peer:", peerId, signal);
                     const peer = peersRef.current[peerId];
                     if (peer) {
                         peer.signal(signal);

@@ -4,11 +4,10 @@ import { Navbar } from '@/components/navbar';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="flex flex-col bg-white">
 
-      {/* bg-[radial-gradient(ellipse_at_bottom,theme(colors.pink.400),theme(colors.blue.500))] */}
       <Navbar />
-      <section className="flex-1 flex flex-col items-center bg-gradient-to-b from-white to-gray-200  justify-center text-center px-4 py-16 sm:px-6 lg:px-8">
+      <section className="flex flex-col items-center h-[calc(100vh-3.5rem)] bg-[radial-gradient(ellipse_at_top,theme(colors.blue.200),theme(colors.white))]  text-center px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-6">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             collabRooms is now in beta →
@@ -31,7 +30,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-gray-200 py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">Key Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

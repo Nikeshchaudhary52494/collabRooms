@@ -7,7 +7,6 @@ export const voiceController = {
         const participants = room ? Array.from(room).filter(id => id !== socket.id) : [];
 
         socket.emit("existing-voice-users", participants);
-        console.log(`User ${socket.id} joined voice room ${roomId}`);
     },
 
     handleSignal(socket, { to, signal }) {

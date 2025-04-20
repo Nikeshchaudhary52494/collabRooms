@@ -1,26 +1,33 @@
 import { roomService } from '../services/roomService.js';
 
 export const roomController = {
-    handleJoinRoom(socket, roomId, userRole) {
+    handleJoinRoom(socket, room, user) {
         try {
-            const room = roomService.joinRoom(roomId, {
-                socketId: socket.id,
-                role: userRole
-            });
+            roomService.joinRoom(
+                room,
+                {
+                    socketId: socket.id,
+                    ...user
+                }
+            );
 
-            socket.join(roomId);
+            socket.join(room.roomId);
 
-            socket.emit('code-update', room.code);
-            socket.emit('language-update', room.language);
-            socket.emit('room-info', {
-                teacher: !!room.teacher,
-                studentCount: room.students.length
-            });
+            return { success: true };
+        } catch (error) {
+            socket.emit('error', error.message);
+            return { success: false, error: error.message };
+        }
+    },
 
-            socket.to(roomId).emit('user-joined', {
-                id: socket.id,
-                role: userRole
-            });
+    handleRoomInfo(socket, roomId) {
+        try {
+            const room = roomService.getRoom(roomId);
+            if (!room) {
+                throw new Error('Room not found');
+            }
+
+            socket.emit('current-room-info', room);
 
             return { success: true };
         } catch (error) {
@@ -43,9 +50,10 @@ export const roomController = {
     handleLanguageChange(socket, io, roomId, newLanguage) {
         try {
             const room = roomService.getRoom(roomId);
+            console.log('this is from hanglr language change', { room, roomId, newLanguage })
 
-            if (room.teacher && room.teacher !== socket.id) {
-                throw new Error('Only teacher can change language');
+            if (room.teacher && room.teacher.socketId !== socket.id) {
+                return console.log('Only teacher can change language');
             }
 
             roomService.updateLanguage(roomId, newLanguage);

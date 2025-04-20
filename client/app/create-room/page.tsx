@@ -5,14 +5,20 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useSocket } from '@/providers/socket-provider';
 
 export default function CreateRoomPage() {
-    const [roomName, setRoomName] = useState('');
+    const [roomname, setRoomname] = useState('');
+    const [username, setUsername] = useState('');
+
+    const { socket } = useSocket();
     const router = useRouter();
 
     const handleCreateRoom = () => {
-        if (!roomName.trim()) return;
+        if (!socket) return;
+        if (!roomname.trim() || !username.trim()) return;
         const roomId = generateRoomId();
+        socket.emit('join-room', { roomId, roomname }, { role: "teacher", username, isMuted: false });
         router.push(`/classroom/${roomId}?role=teacher`);
     };
 
@@ -31,13 +37,25 @@ export default function CreateRoomPage() {
                 </div>
 
                 <div className="space-y-4">
+
+                    <div className="space-y-2">
+                        <Label htmlFor="username" className="text-gray-700">Your Name</Label>
+                        <Input
+                            id="username"
+                            placeholder="e.g. 'John Doe'"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="room-name" className="text-gray-700">Classroom Name</Label>
                         <Input
                             id="room-name"
                             placeholder="e.g. 'Intro to Python'"
-                            value={roomName}
-                            onChange={(e) => setRoomName(e.target.value)}
+                            value={roomname}
+                            onChange={(e) => setRoomname(e.target.value)}
                             className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                     </div>
@@ -45,7 +63,7 @@ export default function CreateRoomPage() {
                     <Button
                         onClick={handleCreateRoom}
                         className="w-full bg-blue-600 hover:bg-blue-700"
-                        disabled={!roomName.trim()}
+                        disabled={!roomname.trim()}
                     >
                         Create Classroom
                     </Button>

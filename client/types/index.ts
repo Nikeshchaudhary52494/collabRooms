@@ -7,11 +7,19 @@ export interface ExecutionResult {
     timestamp: Date;
 }
 
+export interface MemberData {
+    socketId: string,
+    username: string,
+    isMuted: Boolean,
+}
+
 export interface RoomData {
+    id: string;
+    name: string;
+    teacher: MemberData;
+    students: MemberData[];
     code: string;
-    language: SupportedLanguages;
-    teacher?: string; // socket.id of teacher
-    students: string[]; // socket.ids of students
+    language: SupportedLanguages
 }
 
 export type SupportedLanguages =

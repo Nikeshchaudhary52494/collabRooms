@@ -1,10 +1,11 @@
 import { HELLO_WORLD_SNIPPETS } from '../config/constants.js';
 
 export class Room {
-    constructor(roomId, initialUser) {
-        this.id = roomId;
-        this.teacher = initialUser.role === 'teacher' ? initialUser.socketId : null;
-        this.students = initialUser.role === 'student' ? [initialUser.socketId] : [];
+    constructor(room, user) {
+        this.id = room.roomId;
+        this.name = room.roomname;
+        this.teacher = user;
+        this.students = [];
         this.code = HELLO_WORLD_SNIPPETS['javascript'];
         this.language = 'javascript';
         this.createdAt = new Date();
@@ -15,17 +16,17 @@ export class Room {
             if (this.teacher) {
                 throw new Error('Teacher already exists in this room');
             }
-            this.teacher = user.socketId;
-        } else if (!this.students.includes(user.socketId)) {
-            this.students.push(user.socketId);
+            this.teacher = user;
+        } else if (!this.students.find(u => u.socketId === user.socketId)) {
+            this.students.push(user);
         }
     }
 
     removeUser(socketId) {
-        if (this.teacher === socketId) {
+        if (this.teacher?.socketId === socketId) {
             this.teacher = null;
         } else {
-            this.students = this.students.filter(id => id !== socketId);
+            this.students = this.students.filter(user => user.socketId !== socketId);
         }
     }
 

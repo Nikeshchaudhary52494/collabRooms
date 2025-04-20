@@ -6,24 +6,24 @@ class RoomService {
         this.rooms = {};
     }
 
-    createRoom(roomId, user) {
-        if (this.rooms[roomId]) {
+    createRoom(room, user) {
+        if (this.rooms[room.roomId]) {
             throw new Error('Room already exists');
         }
-        this.rooms[roomId] = new Room(roomId, user);
-        return this.rooms[roomId];
+        this.rooms[room.roomId] = new Room(room, user);
+        return this.rooms[room.roomId];
     }
 
     getRoom(roomId) {
         return this.rooms[roomId];
     }
 
-    joinRoom(roomId, user) {
-        if (!this.rooms[roomId]) {
-            return this.createRoom(roomId, user);
+    joinRoom(room, user) {
+        if (!this.rooms[room.roomId]) {
+            return this.createRoom(room, user);
         }
-        this.rooms[roomId].addUser(user);
-        return this.rooms[roomId];
+        this.rooms[room.roomId].addUser(user);
+        return this.rooms[room.roomId];
     }
 
     leaveRoom(roomId, socketId) {
@@ -59,8 +59,10 @@ class RoomService {
     getAllRoomsInfo() {
         return Object.keys(this.rooms).map(roomId => ({
             id: roomId,
+            name: this.rooms[roomId].name,
+            code: this.rooms[roomId].code,
             teacher: this.rooms[roomId].teacher,
-            students: this.rooms[roomId].students.length,
+            students: this.rooms[roomId].students,
             language: this.rooms[roomId].language,
             createdAt: this.rooms[roomId].createdAt
         }));

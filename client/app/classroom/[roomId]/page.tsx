@@ -17,7 +17,7 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { OutputPanel } from '@/components/OutputPanel';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
-import { Check, Copy } from 'lucide-react';
+import { Check, Code, Copy, Mic, Speaker, VolumeOff } from 'lucide-react';
 import AudioPlayer from '@/components/AudioPlayer';
 
 export default function ClassroomPage() {
@@ -28,8 +28,6 @@ export default function ClassroomPage() {
     const remoteAudioRefs = useRef<{ [peerId: string]: HTMLAudioElement | null }>({});
     const [theme, setTheme] = useState<'vs' | 'vs-dark' | 'hc-black'>('vs-dark');
     const [isCopied, setIsCopied] = useState(false);
-
-    console.log(remoteAudioRefs.current, 'remoteAudioRefs.current.length');
 
     const { socket, isConnected } = useSocket();
     const { isMuted, toggleMic, activeSpeakers, remoteStreams } = useVoiceRoom(roomId, socket, remoteAudioRefs);
@@ -43,7 +41,10 @@ export default function ClassroomPage() {
         language,
         setLanguage,
         isExecuting,
-        setIsExecuting
+        setIsExecuting,
+        roomName,
+        students,
+        teacher,
     } = useSocketEvents(socket);
 
     const toggleTheme = () => {
@@ -53,7 +54,6 @@ export default function ClassroomPage() {
             return 'vs';
         });
     };
-
     const emitCodeChange = useCallback(
         (newCode: string) => {
             if (!socket || !roomId) return;
@@ -103,14 +103,22 @@ export default function ClassroomPage() {
     useEffect(() => {
         if (!roomId || !socket) return;
 
-        socket.emit('join-room', roomId, userRole);
+        socket.emit('room-info', roomId);
+
         return () => {
             socket.emit('leave-voice-room', roomId);
         };
-    }, [socket, userRole, roomId]);
+    }, [socket, roomId]);
 
     return (
         <div className="flex flex-col h-screen">
+            <div className='bg-blue-400 flex items-center justify-between px-2 text-xs'>
+                <div className='flex items-center gap-2 text-blue-900'>
+                    <Code /><p>codeCollab </p>
+                </div>
+                <p className='bg-black/20 h-full w-1/3 text-center flex items-center justify-center text-white'>{roomName}</p>
+                <ConnectionStatus isConnected={isConnected} />
+            </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center px-2 sm:justify-between">
                 <div className="flex items-center gap-4">
                     <LanguageSelector
@@ -128,20 +136,6 @@ export default function ClassroomPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="speakers">
-                        {activeSpeakers.length === 0 ? (
-                            <p>No active speakers</p>
-                        ) : (
-                            activeSpeakers.map(peerId => (
-                                <div key={peerId} className="speaker">
-                                    <p>User {peerId.slice(0, 5)}</p>
-                                    {remoteStreams[peerId] && (
-                                        <AudioPlayer stream={remoteStreams[peerId]} />
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
                     <AudioControls toggleMic={toggleMic} isMuted={isMuted} />
                     <Button
                         variant="outline"
@@ -162,20 +156,70 @@ export default function ClassroomPage() {
                         )}
                     </Button>
                     <ThemeToggle toggleTheme={toggleTheme} />
-                    <ConnectionStatus isConnected={isConnected} />
                 </div>
             </div>
 
             <ResizablePanelGroup direction="vertical" className="min-h-[80vh]">
                 <ResizablePanel defaultSize={75}>
-                    <div className="h-full overflow-hidden">
-                        <CodeEditor
-                            language={language}
-                            theme={theme}
-                            code={code}
-                            handleCodeChange={handleCodeChange}
-                        />
-                    </div>
+                    <ResizablePanelGroup direction='horizontal'>
+                        <ResizablePanel defaultSize={80} minSize={75}>
+                            <div className="h-full overflow-hidden">
+                                <CodeEditor
+                                    language={language}
+                                    theme={theme}
+                                    code={code}
+                                    handleCodeChange={handleCodeChange}
+                                />
+                            </div>
+                        </ResizablePanel>
+                        <ResizableHandle />
+                        <ResizablePanel defaultSize={20} minSize={0}>
+                            <div className="h-full flex flex-col">
+                                <div className="space-y-4 p-4">
+                                    {teacher && (
+                                        <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                                            <span className="font-medium">{teacher.username}</span>
+                                            <div className="text-gray-600">
+                                                {teacher.isMuted ? <Speaker size={20} /> : <Mic size={20} />}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {students?.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className="text-sm font-semibold text-gray-500">Students</h3>
+                                            {students.map((student) => (
+                                                <div
+                                                    key={student.socketId}
+                                                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                                                >
+                                                    <span>{student.username}</span>
+                                                    <div className="text-gray-500">
+                                                        {student.isMuted ? <Speaker size={18} /> : <Mic size={18} />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 p-4 border-t border-gray-200">
+                                    {activeSpeakers.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-center">
+                                            <VolumeOff size={24} className="text-gray-400 mb-2" />
+                                            <p className="text-sm text-gray-500">No active speakers</p>
+                                        </div>
+                                    ) : (
+                                        activeSpeakers.map(peerId => (
+                                            remoteStreams[peerId] && (
+                                                <AudioPlayer stream={remoteStreams[peerId]} />
+                                            )
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </ResizablePanel>
+                    </ResizablePanelGroup>
                 </ResizablePanel>
                 <ResizableHandle />
                 <ResizablePanel defaultSize={25} minSize={10}>

@@ -6,8 +6,12 @@ export const socketRoutes = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected', socket.id);
 
-        socket.on('join-room', (roomId, userRole) => {
-            roomController.handleJoinRoom(socket, roomId, userRole);
+        socket.on('join-room', (room, user) => {
+            roomController.handleJoinRoom(socket, room, user);
+        });
+
+        socket.on('room-info', (roomId) => {
+            roomController.handleRoomInfo(socket, roomId);
         });
 
         socket.on('code-change', (roomId, newCode) => {

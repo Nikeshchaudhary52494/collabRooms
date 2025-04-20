@@ -15,7 +15,7 @@ export const ExecutionControls = ({
     return (
         <Button
             onClick={executeCode}
-            className="w-20 h-8 text-xs"
+            className="w-20 h-8 hover:bg-blue-400 bg-blue-500 text-xs"
             disabled={isExecuting || !isConnected}
         >
             {isExecuting ? (
